@@ -1,25 +1,20 @@
 from selenium import webdriver
 import time
-import requests
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.keys import Keys
 import csv
-import gc
-from itertools import zip_longest
+import pandas as pd
+from sklearn import preprocessing
+from sklearn.cluster import KMeans
+from sklearn.metrics import pairwise_distances_argmin_min
 
 # URL DE HOTELES
-
-# BOOKING
-booking = 'https://www.booking.com/searchresults.es.html?aid=376374&label=esrow-OtlvhU2CXhSVxek50Z_17wS267754636760%3Apl%3Ata%3Ap1%3Ap22.563.000%3Aac%3Aap%3Aneg%3Afi%3Atikwd-65526620%3Alp1029332%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YcUSe6BbHz0Ad_yDShFFSHQ&lang=es&sid=3c1a56ee40179313176cd2bb6dadb53c&sb=1&sb_lp=1&src=index&src_elem=sb&error_url=https%3A%2F%2Fwww.booking.com%2Findex.es.html%3Faid%3D376374%3Blabel%3Desrow-OtlvhU2CXhSVxek50Z_17wS267754636760%253Apl%253Ata%253Ap1%253Ap22.563.000%253Aac%253Aap%253Aneg%253Afi%253Atikwd-65526620%253Alp1029332%253Ali%253Adec%253Adm%253Appccp%253DUmFuZG9tSVYkc2RlIyh9YcUSe6BbHz0Ad_yDShFFSHQ%3Bsid%3D3c1a56ee40179313176cd2bb6dadb53c%3Bsb_price_type%3Dtotal%26%3B&ss=Ibagu%C3%A9%2C+Colombia&is_ski_area=&checkin_year=2022&checkin_month=5&checkin_monthday=16&checkout_year=2022&checkout_month=5&checkout_monthday=17&group_adults=2&group_children=0&no_rooms=1&b_h4u_keep_filters=&from_sf=1&dest_id=-586582&dest_type=city&search_pageview_id=178ca56cff7600e4&search_selected=true'
 
 # DESPEGAR
 despegar = 'https://www.despegar.com.co/hoteles/?adjus&gclid=EAIaIQobChMI34qB6Yjl9gIVBojICh0fiwmjEAAYAiAAEgI_ufD_BwE&mktdata=kw%3Ddespegar%2520hoteles%26c%3D574414115743%26cc%3DCO%26mt%3De%26n%3Dg%26p%3D%26ap%3D%26d%3Dc%26dm%3D%26targetid%3Dkwd-18654789471%26campaignid%3D15854888810%26adgroupid%3D130785166303%26ExperimentId%3D%26locationid%3D1029332%26accountid%3D2593993521%26pr%3DG%26adjust_adgroup%3D130785166303%26adjust_campaign%3D15854888810%26adjust_t%3Dovd1mo_r45y7l_v9v5li%26adjust_creative%3D574414115743%26key%3DUT81AK9JAFEGJ4D69OVO6J673E%26adjust_tracker_limit%3D1000000000%26gclid%3DEAIaIQobChMI34qB6Yjl9gIVBojICh0fiwmjEAAYAiAAEgI_ufD_BwE%26id%3D20220327004822140405128019449595%26trackeame_user_id%3D12FE645FF1F916442636987873a79cdac-9f16-414d-ba55-4e8def7464c749189494'
 
 # TRIPADVISOR
 tripadvisor = 'https://www.tripadvisor.co/Hotels'
-
-#Hoteles.com
-hotelespuntocom = 'https://co.hoteles.com';
 
 #-------------------------------------------------------
 # Comienzo App
@@ -36,68 +31,6 @@ driver.maximize_window()
 
 
 # Obtencion de informacion Booking
-def getBookingInformation():
-    print("-----------------BOOKING-----------------")
-    driver.get(booking)
-    time.sleep(2)
-
-    hotels = driver.find_element_by_name('ss')
-    hotels.send_keys(Keys.CONTROL, 'a')
-    hotels.send_keys(Keys.BACKSPACE)
-    hotels.send_keys(ciudad)
-
-    time.sleep(3)
-    confirmBtn = driver.find_element_by_class_name('cd1e09fdfe')
-    confirmBtn.click()
-
-    search = driver.find_element_by_xpath('//*[@id="left_col_wrapper"]/div[1]/div/div/form/div/div[6]/button')
-    search.click()
-
-    #BS4
-    html_txt = driver.page_source
-    soup = BeautifulSoup(html_txt, features="html.parser")
-
-    nameBookingList = []
-    noteBookingList = []
-    priceBookingList = []
-
-    print("-----------------------------------------------" + "\n")
-    print("Nombre hoteles Booking")
-
-    nombreHoteles = driver.find_elements_by_xpath('//div[@data-testid="title"]')
-
-    for i in nombreHoteles:
-        nameBookingList.append(i.text)
-        print(i.text)
-    print(len(nameBookingList))
-
-    print("-----------------------------------------------")
-    print("Calificacion en Booking:")
-    # Rating
-    noteBooking = driver.find_elements_by_xpath('//div[@data-testid="review-score"]//div[@class="b5cd09854e d10a6220b4"]')
-
-    for n in noteBooking:
-        noteBookingList.append(n.text)
-        print(n.text)
-    print(len(noteBookingList))
-
-    #Precio
-    priceBooking = driver.find_elements_by_xpath('//span[@class="fcab3ed991 bd73d13072"]')
-
-    for m in priceBooking:
-        priceBookingList.append(m.text)
-        print(m.text)
-    print(len(priceBookingList))
-
-# Archivo CSV
-
-    with open('hoteles.csv', 'w', encoding='UTF8', newline='') as file:
-
-        writer = csv.writer(file)
-        for w in range(0, len(nameBookingList)):
-            writer.writerow([nameBookingList[w], priceBookingList[w], noteBookingList[w]])
-        file.close()
-
 def getDespegarInformation():
     print("-----------------DESPEGAR-----------------")
 
@@ -159,8 +92,9 @@ def getDespegarInformation():
     priceDespegar = driver.find_elements_by_xpath('//div[@class="pricebox-value-container"]//div[@class="pricebox-value"]//span[@class="pricebox-big-text"]')
 
     for n in priceDespegar:
-        priceDespegarList.append(n.text)
-        print(n.text)
+        cantidad = float(n.text.replace(".",""))
+        priceDespegarList.append(cantidad)
+        print(cantidad)
     print(len(priceDespegarList))
     #print("-----------------------------------------------")
     #print("Rating del Hotel en Despegar:")
@@ -174,7 +108,7 @@ def getDespegarInformation():
 
     # Archivo CSV
 
-    with open('hoteles.csv', 'a') as file:
+    with open('hoteles.csv', 'w', newline='') as file:
 
         writer = csv.writer(file)
         for w in range(0, len(nameDespegarList)):
@@ -227,11 +161,14 @@ def getTripAdvisorInformation():
             nameTripAdvisorList.append(n.text)
         # Muestra Precio
         for m in priceTripAdvisor:
-            priceTripAdvisorList.append(m.text)
-
+            priceStr = str(m.text)
+            price = priceStr.replace("$", "")
+            price2 = price.replace(" ", "")
+            cantidad =  float(price2.replace(".", ""))
+            priceTripAdvisorList.append(cantidad)
         time.sleep(4)
         # Archivo CSV
-        with open('hoteles.csv', 'a') as file:
+        with open('hoteles.csv', 'a', newline='') as file:
 
             writer = csv.writer(file)
             for w in range(0, len(nameTripAdvisorList)):
@@ -248,9 +185,81 @@ def getTripAdvisorInformation():
     print(len(priceTripAdvisorList))
 
 # Ejecucion
-# getBookingInformation()
-getDespegarInformation()
-getTripAdvisorInformation()
+#getBookingInformation()
+#getDespegarInformation()
+#getTripAdvisorInformation()
 
-# Cierre
+# Cierre Selenium
 driver.quit()
+
+#----------------------------------------o--------------------------------------------
+
+#LECTURA PANDAS
+df = pd.read_csv('hoteles.csv', sep=",", header=None, encoding='latin1') #Lectura del CSV y su configuracion
+df.columns =['Nombre', 'Precio'] #PD Columns
+
+#Procesamiento de Informaciòn
+
+#Precios Limites
+maxPriceCSV = 1000000.0
+minPriceCSV = 50000.0
+
+#Eliminaciòn de hoteles dentro de un rango maximo y minimo
+df = df.drop(df[df['Precio']> float(maxPriceCSV)].index) #Elimina Precios por encima del precio Maximo
+df = df.drop(df[df['Precio']< float(minPriceCSV)].index) #Elimina Precios por debajo del precio minimo
+
+#Clasificacion Precios
+maxPrice = df['Precio'].max() #100%
+minPrice = df['Precio'].min() #1%
+meanPrice = ((maxPrice + minPrice) / 2) #50%
+meanUpperPrice = ((maxPrice + meanPrice) / 2) #75%
+meanLowerPrice = ((minPrice + meanPrice) / 2) #25%
+
+print("----------------")
+print("Categorias")
+print("----------------")
+print("Max Price")
+print(maxPrice)
+print("----------------")
+print("Mean Upper Price")
+print(meanUpperPrice)
+print("----------------")
+print("Mean Price")
+print(meanPrice)
+print("----------------")
+print("Mean Lower Price")
+print(meanLowerPrice)
+print("----------------")
+print("Min Price")
+print(minPrice)
+
+#Clasificacion Precios
+
+expensiveHotels = df.drop(df[df['Precio']> float(meanUpperPrice)].index)
+expensiveHotels = df.drop(df[df['Precio']< float(maxPrice)].index)
+
+modestHotels = df.drop(df[df['Precio']> float(meanPrice)].index)
+modestHotels = df.drop(df[df['Precio']< float(meanUpperPrice)].index)
+
+meanHotels = df.drop(df[df['Precio']> float(meanLowerPrice)].index)
+meanHotels = df.drop(df[df['Precio']< float(meanPrice)].index)
+
+cheapHotels = df.drop(df[df['Precio']> float(minPrice)].index)
+cheapHotels = df.drop(df[df['Precio']< float(meanLowerPrice)].index)
+
+print("\n--------------------------------")
+print("Cantidad De Hoteles Por Categoria")
+print("--------------------------------")
+print("Hoteles Costos")
+print(expensiveHotels.count(axis=0))
+print("----------------")
+print("Hoteles Precio Moderado")
+print(modestHotels.count(axis=0))
+print("----------------")
+print("Hoteles Precio Medio")
+print(meanHotels.count(axis=0))
+print("----------------")
+print("Hoteles Economicos")
+print(cheapHotels.count(axis=0))
+
+
