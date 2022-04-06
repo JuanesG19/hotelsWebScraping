@@ -296,8 +296,8 @@ def dataProcessing():
     print("1 -> Hoteles Muy Costosos (" + str(veryExpensiveHotels['Precio'].count()) + ")" )
     print("2 -> Hoteles Costosos (" + str(expensiveHotels['Precio'].count()) + ")")
     print("3 -> Hoteles de Costo Medio (" + str(meanHotels['Precio'].count()) + ")")
-    print("4 -> Hoteles Economicos (" + str(cheapHotels['Precio'].count()) + ")")
-    print("5 -> Hoteles Muy Economicos (" + str(veryCheapHotels['Precio'].count()) + ")")
+    print("4 -> Hoteles Económicos (" + str(cheapHotels['Precio'].count()) + ")")
+    print("5 -> Hoteles Muy Económicos (" + str(veryCheapHotels['Precio'].count()) + ")")
     print("6 -> Ver todos ("+ str(df['Precio'].count()) + ")")
 
     opcion = input()
