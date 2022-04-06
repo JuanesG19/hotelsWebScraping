@@ -68,30 +68,17 @@ def getDespegarInformation():
     priceDespegarList = []
     ratingHotelList = []
 
-    #Nombre Hotel
-    print("-----------------------------------------------" + "\n")
-    print("Nombre de los hoteles Despegar")
-    print("-----------------------------------------------")
-
     nombreHoteles = driver.find_elements_by_xpath('//div[@class="cluster-content"]//div[@class="offer-card-title"]')
 
     for i in nombreHoteles:
         nameDespegarList.append(i.text)
-        print(i.text)
-    print(len(nameDespegarList))
-    # Precio
-
-    print("-----------------------------------------------")
-    print("Precio del Hotel en Despegar:")
-    print("-----------------------------------------------")
 
     priceDespegar = driver.find_elements_by_xpath('//div[@class="pricebox-value-container"]//div[@class="pricebox-value"]//span[@class="pricebox-big-text"]')
 
     for n in priceDespegar:
         cantidad = float(n.text.replace(".",""))
         priceDespegarList.append(cantidad)
-        print(cantidad)
-    print(len(priceDespegarList))
+    print("Los Hoteles Despegar Obtenidos Fueron: " + str(len(priceDespegarList)))
     #print("-----------------------------------------------")
     #print("Rating del Hotel en Despegar:")
     # Precio
@@ -112,7 +99,7 @@ def getDespegarInformation():
         file.close()
     time.sleep(3)
 def getTripAdvisorInformation():
-    print("------Tripadvisor------")
+    print("-----------------TRIPADVISOR-----------------")
 
     driver.get(tripadvisor)
     time.sleep(2)
@@ -162,6 +149,8 @@ def getTripAdvisorInformation():
             price2 = price.replace(" ", "")
             cantidad =  float(price2.replace(".", ""))
             priceTripAdvisorList.append(cantidad)
+
+
         time.sleep(4)
         # Archivo CSV
         with open('hoteles.csv', 'a', newline='') as file:
@@ -177,12 +166,12 @@ def getTripAdvisorInformation():
         siguientePg.click()
         time.sleep(4)
 
-    print(len(nameTripAdvisorList))
-    print(len(priceTripAdvisorList))
+    print("Los Hoteles TripAdvisor obtenidos fueron: " + str(len(priceTripAdvisorList)))
+
 
 # Ejecucion Metodos Extraccion
-#getDespegarInformation()
-#getTripAdvisorInformation()
+getDespegarInformation()
+getTripAdvisorInformation()
 
 # Cierre Selenium
 driver.quit()
@@ -214,9 +203,6 @@ def dataProcessing():
     df = df.drop(df[df['Precio']< float(minPriceCSV)].index) #Elimina Precios por debajo del precio minimo
 
     #Hoteles despues de la limpieza
-    print("----------------")
-    print("La cantidad de hoteles son :")
-    print(df.count())
 
     #Porcentajes
     hundredPercent = df['Precio'].max() #100%
@@ -226,49 +212,45 @@ def dataProcessing():
     twentyPercent = ((fortyPercent * 0.2) / 0.4) #20%
     ceroPercent = df['Precio'].min() #0%
 
+    """
+    #PORCENTAJES
     print("\n----------------")
     print("Porcentajes")
     print("----------------")
     print("100%") #100%
     print(hundredPercent)
     print("----------------")
-    print("80%") #75%
+    print("80%") #80%
     print(eightyPercent)
     print("----------------")
-    print("60%") #50%
+    print("60%") #60%
     print(sixtyPercent)
     print("----------------")
-    print("40%") #25%
+    print("40%") #40%
     print(fortyPercent)
-    print("----------------") #0%
+    print("----------------") #20%
     print("20%")
     print(twentyPercent)
     print("----------------") #0%
     print("0%")
     print(ceroPercent)
+    """
 
     #Clasificacion Precios
 
-    veryExpensiveHotels = df.drop(df[df['Precio'] > float(eightyPercent)].index)
-    veryExpensiveHotels = df.drop(df[df['Precio'] < float(hundredPercent)].index)
-    print(veryExpensiveHotels)
+    veryExpensiveHotels = df.drop(df[df['Precio'] < float(eightyPercent)].index)
 
-    expensiveHotels = df.drop(df[df['Precio'] > float(sixtyPercent)].index)
-    expensiveHotels = df.drop(df[df['Precio'] < float(eightyPercent)].index)
-    print(expensiveHotels)
+    expensiveHotelF = df[df['Precio'] < float(eightyPercent)]
+    expensiveHotels = expensiveHotelF[expensiveHotelF['Precio'] > float(sixtyPercent)]
 
-    meanHotels = df.drop(df[df['Precio'] > float(fortyPercent)].index)
-    meanHotels = df.drop(df[df['Precio'] < float(sixtyPercent)].index)
-    print(meanHotels)
+    meanHotelF = df[df['Precio'] < float(sixtyPercent)]
+    meanHotels = meanHotelF[meanHotelF['Precio'] > float(fortyPercent)]
 
-    cheapHotels = df.drop(df[df['Precio'] > float(twentyPercent)].index)
-    cheapHotels = df.drop(df[df['Precio'] < float(fortyPercent)].index)
-    print(cheapHotels)
+    cheapHotelsF = df[df['Precio'] < float(fortyPercent)]
+    cheapHotels = cheapHotelsF[cheapHotelsF['Precio'] > float(twentyPercent)]
 
-    veryCheapHotels = df.drop(df[df['Precio']> float(ceroPercent)].index)
-    veryCheapHotels = df.drop(df[df['Precio']< float(twentyPercent)].index)
-    print(veryCheapHotels)
-
+    veryCheapHotelsF = df[df['Precio'] < float(twentyPercent)]
+    veryCheapHotels = veryCheapHotelsF[veryCheapHotelsF['Precio'] > float(ceroPercent)]
 
     """
     #Se imprimen la cantidad de hoteles por categoria
@@ -284,46 +266,91 @@ def dataProcessing():
     print("Hoteles Economicos: " + str(cheapHotels['Precio'].count()))
     print("---------------")
     print("Hoteles Muy Economicos: " + str(veryCheapHotels['Precio'].count()))
+    """
 
     #TOP 5
 
     #Se organiza la informacion dentro de cada categoria
 
-    veryExpensiveHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    veryExpensiveHotels.sort_values(by='Precio', ascending=False)
     veryExpensiveHotelsTop = veryExpensiveHotels.head(n=5)
 
-    expensiveHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    expensiveHotels.sort_values(by='Precio', ascending=False)
     expensiveHotelsTop = expensiveHotels.head(n=5)
 
-    meanHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    meanHotels.sort_values(by='Precio', ascending=False)
     meanHotelsTop = meanHotels.head(n=5)
 
-    cheapHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    cheapHotels.sort_values(by='Precio', ascending=False)
     cheapHotelsTop = cheapHotels.head(n=5)
 
-    veryCheapHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    veryCheapHotels.sort_values(by='Precio', ascending=False)
     veryCheapHotelsTop = veryCheapHotels.head(n=5)
 
 
-    #Se imprimen el top 5 hoteles por categoria
+    #Interacciòn con el cliente
     print("\n--------------------------------")
-    print("Top 5 Hoteles por Categoria")
+    print("MENU DE OPCIONES")
     print("--------------------------------")
-    print("Muy costosos: ")
-    print(veryExpensiveHotelsTop)
-    print("----------------")
-    print("Costosos: ")
-    print(expensiveHotelsTop)
-    print("----------------")
-    print("Medios: ")
-    print(meanHotelsTop)
-    print("---------------")
-    print("Hoteles Economicos: ")
-    print(cheapHotelsTop)
-    print("---------------")
-    print("Hoteles Muy Economicos: ")
-    print(veryCheapHotelsTop)
-    """
+    print("Que tipo de hotel desea buscar: ")
+    print("1 -> Hoteles Muy Costosos (" + str(veryExpensiveHotels['Precio'].count()) + ")" )
+    print("2 -> Hoteles Costosos (" + str(expensiveHotels['Precio'].count()) + ")")
+    print("3 -> Hoteles de Costo Medio (" + str(meanHotels['Precio'].count()) + ")")
+    print("4 -> Hoteles Economicos (" + str(cheapHotels['Precio'].count()) + ")")
+    print("5 -> Hoteles Muy Economicos (" + str(veryCheapHotels['Precio'].count()) + ")")
+    print("6 -> Ver todos ("+ str(df['Precio'].count()) + ")")
+
+    opcion = input()
+
+    if opcion == "1":
+        print("--------------------------------")
+        print("Hoteles Muy costosos: ")
+        print("--------------------------------")
+        print(veryExpensiveHotelsTop)
+    elif opcion == "2":
+        print("--------------------------------")
+        print("Hoteles Costosos: ")
+        print("--------------------------------")
+        print(expensiveHotelsTop)
+        print("--------------------------------")
+        print("Hoteles Muy costosos: ")
+        print("--------------------------------")
+    elif opcion == "3":
+        print("--------------------------------")
+        print("Hoteles Precio Medio: ")
+        print("--------------------------------")
+        print(meanHotelsTop)
+    elif opcion == "4":
+        print("--------------------------------")
+        print("Hoteles Economicos: ")
+        print("--------------------------------")
+        print(cheapHotelsTop)
+    elif opcion == "5":
+        print("--------------------------------")
+        print("Hoteles Muy Economicos: ")
+        print("--------------------------------")
+        print(veryCheapHotelsTop)
+    elif opcion == "6":
+        print("--------------------------------")
+        print("Total de Hoteles ("+ str(df['Precio'].count()) + ")")
+        print("--------------------------------")
+        print("Hoteles Muy costosos: ")
+        print(veryExpensiveHotelsTop)
+        print("--------------------------------")
+        print("Hoteles Costosos: ")
+        print(expensiveHotelsTop)
+        print("--------------------------------")
+        print("Hoteles Precio Medio: ")
+        print(meanHotelsTop)
+        print("--------------------------------")
+        print("Hoteles Economicos: ")
+        print(cheapHotelsTop)
+        print("--------------------------------")
+        print("Hoteles Muy Economicos: ")
+        print(veryCheapHotelsTop)
+    else:
+        print("Error")
+
 
 
 #Ejecucion Metodo Procesamiento De Datos Categoricos
