@@ -1,12 +1,8 @@
 from selenium import webdriver
 import time
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.keys import Keys
 import csv
 import pandas as pd
-from sklearn import preprocessing
-from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min
 
 # URL DE HOTELES
 
@@ -184,82 +180,151 @@ def getTripAdvisorInformation():
     print(len(nameTripAdvisorList))
     print(len(priceTripAdvisorList))
 
-# Ejecucion
-#getBookingInformation()
+# Ejecucion Metodos Extraccion
 #getDespegarInformation()
 #getTripAdvisorInformation()
 
 # Cierre Selenium
 driver.quit()
 
-#----------------------------------------o--------------------------------------------
-
-#LECTURA PANDAS
+#Se Procesa la informacion del CSV
 df = pd.read_csv('hoteles.csv', sep=",", header=None, encoding='latin1') #Lectura del CSV y su configuracion
 df.columns =['Nombre', 'Precio'] #PD Columns
+df = df.drop_duplicates(subset=['Nombre'], keep='first', inplace=False) #Se eliminan datos repetidos
 
-#Procesamiento de Informaciòn
+#Se limpia el CSV
+f = open("hoteles.csv", "w+")
+f.truncate()
+df.to_csv('hoteles.csv', sep=",", encoding='latin1', index=False, index_label=None, header=False)
+f.close()
 
-#Precios Limites
-maxPriceCSV = 1000000.0
-minPriceCSV = 50000.0
+#Procesamiento De Datos Categoricos
+def dataProcessing():
 
-#Eliminaciòn de hoteles dentro de un rango maximo y minimo
-df = df.drop(df[df['Precio']> float(maxPriceCSV)].index) #Elimina Precios por encima del precio Maximo
-df = df.drop(df[df['Precio']< float(minPriceCSV)].index) #Elimina Precios por debajo del precio minimo
+    df = pd.read_csv('hoteles.csv', sep=",", header=None, encoding='latin1')  # Lectura del CSV y su configuracion
+    df.columns = ['Nombre', 'Precio']  # PD Columns
+    #Procesamiento Categorico de Informaciòn
 
-#Clasificacion Precios
-maxPrice = df['Precio'].max() #100%
-minPrice = df['Precio'].min() #1%
-meanPrice = ((maxPrice + minPrice) / 2) #50%
-meanUpperPrice = ((maxPrice + meanPrice) / 2) #75%
-meanLowerPrice = ((minPrice + meanPrice) / 2) #25%
+    #Precios Limites
+    maxPriceCSV = 1000000.0
+    minPriceCSV = 50000.0
 
-print("----------------")
-print("Categorias")
-print("----------------")
-print("Max Price")
-print(maxPrice)
-print("----------------")
-print("Mean Upper Price")
-print(meanUpperPrice)
-print("----------------")
-print("Mean Price")
-print(meanPrice)
-print("----------------")
-print("Mean Lower Price")
-print(meanLowerPrice)
-print("----------------")
-print("Min Price")
-print(minPrice)
+    #Eliminaciòn de hoteles dentro de un rango maximo y minimo
+    df = df.drop(df[df['Precio']> float(maxPriceCSV)].index) #Elimina Precios por encima del precio Maximo
+    df = df.drop(df[df['Precio']< float(minPriceCSV)].index) #Elimina Precios por debajo del precio minimo
 
-#Clasificacion Precios
+    #Hoteles despues de la limpieza
+    print("----------------")
+    print("La cantidad de hoteles son :")
+    print(df.count())
 
-expensiveHotels = df.drop(df[df['Precio']> float(meanUpperPrice)].index)
-expensiveHotels = df.drop(df[df['Precio']< float(maxPrice)].index)
+    #Porcentajes
+    hundredPercent = df['Precio'].max() #100%
+    eightyPercent = (hundredPercent * 0.8) #80%
+    sixtyPercent = ((eightyPercent * 0.6) / 0.8) #60%
+    fortyPercent = ((sixtyPercent * 0.4) / 0.6) #40%
+    twentyPercent = ((fortyPercent * 0.2) / 0.4) #20%
+    ceroPercent = df['Precio'].min() #0%
 
-modestHotels = df.drop(df[df['Precio']> float(meanPrice)].index)
-modestHotels = df.drop(df[df['Precio']< float(meanUpperPrice)].index)
+    print("\n----------------")
+    print("Porcentajes")
+    print("----------------")
+    print("100%") #100%
+    print(hundredPercent)
+    print("----------------")
+    print("80%") #75%
+    print(eightyPercent)
+    print("----------------")
+    print("60%") #50%
+    print(sixtyPercent)
+    print("----------------")
+    print("40%") #25%
+    print(fortyPercent)
+    print("----------------") #0%
+    print("20%")
+    print(twentyPercent)
+    print("----------------") #0%
+    print("0%")
+    print(ceroPercent)
 
-meanHotels = df.drop(df[df['Precio']> float(meanLowerPrice)].index)
-meanHotels = df.drop(df[df['Precio']< float(meanPrice)].index)
+    #Clasificacion Precios
 
-cheapHotels = df.drop(df[df['Precio']> float(minPrice)].index)
-cheapHotels = df.drop(df[df['Precio']< float(meanLowerPrice)].index)
+    veryExpensiveHotels = df.drop(df[df['Precio'] > float(eightyPercent)].index)
+    veryExpensiveHotels = df.drop(df[df['Precio'] < float(hundredPercent)].index)
+    print(veryExpensiveHotels)
 
-print("\n--------------------------------")
-print("Cantidad De Hoteles Por Categoria")
-print("--------------------------------")
-print("Hoteles Costos")
-print(expensiveHotels.count(axis=0))
-print("----------------")
-print("Hoteles Precio Moderado")
-print(modestHotels.count(axis=0))
-print("----------------")
-print("Hoteles Precio Medio")
-print(meanHotels.count(axis=0))
-print("----------------")
-print("Hoteles Economicos")
-print(cheapHotels.count(axis=0))
+    expensiveHotels = df.drop(df[df['Precio'] > float(sixtyPercent)].index)
+    expensiveHotels = df.drop(df[df['Precio'] < float(eightyPercent)].index)
+    print(expensiveHotels)
+
+    meanHotels = df.drop(df[df['Precio'] > float(fortyPercent)].index)
+    meanHotels = df.drop(df[df['Precio'] < float(sixtyPercent)].index)
+    print(meanHotels)
+
+    cheapHotels = df.drop(df[df['Precio'] > float(twentyPercent)].index)
+    cheapHotels = df.drop(df[df['Precio'] < float(fortyPercent)].index)
+    print(cheapHotels)
+
+    veryCheapHotels = df.drop(df[df['Precio']> float(ceroPercent)].index)
+    veryCheapHotels = df.drop(df[df['Precio']< float(twentyPercent)].index)
+    print(veryCheapHotels)
 
 
+    """
+    #Se imprimen la cantidad de hoteles por categoria
+    print("\n--------------------------------")
+    print("Cantidad De Hoteles Por Categoria")
+    print("--------------------------------")
+    print("Muy costosos: " + str(veryExpensiveHotels['Precio'].count()))
+    print("----------------")
+    print("Costosos: " + str(expensiveHotels['Precio'].count()))
+    print("----------------")
+    print("Medios: " + str(meanHotels['Precio'].count()))
+    print("---------------")
+    print("Hoteles Economicos: " + str(cheapHotels['Precio'].count()))
+    print("---------------")
+    print("Hoteles Muy Economicos: " + str(veryCheapHotels['Precio'].count()))
+
+    #TOP 5
+
+    #Se organiza la informacion dentro de cada categoria
+
+    veryExpensiveHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    veryExpensiveHotelsTop = veryExpensiveHotels.head(n=5)
+
+    expensiveHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    expensiveHotelsTop = expensiveHotels.head(n=5)
+
+    meanHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    meanHotelsTop = meanHotels.head(n=5)
+
+    cheapHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    cheapHotelsTop = cheapHotels.head(n=5)
+
+    veryCheapHotels.sort_values(by='Precio', ascending=False, inplace=True)
+    veryCheapHotelsTop = veryCheapHotels.head(n=5)
+
+
+    #Se imprimen el top 5 hoteles por categoria
+    print("\n--------------------------------")
+    print("Top 5 Hoteles por Categoria")
+    print("--------------------------------")
+    print("Muy costosos: ")
+    print(veryExpensiveHotelsTop)
+    print("----------------")
+    print("Costosos: ")
+    print(expensiveHotelsTop)
+    print("----------------")
+    print("Medios: ")
+    print(meanHotelsTop)
+    print("---------------")
+    print("Hoteles Economicos: ")
+    print(cheapHotelsTop)
+    print("---------------")
+    print("Hoteles Muy Economicos: ")
+    print(veryCheapHotelsTop)
+    """
+
+
+#Ejecucion Metodo Procesamiento De Datos Categoricos
+dataProcessing()
